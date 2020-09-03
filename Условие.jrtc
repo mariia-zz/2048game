@@ -1,122 +1,12 @@
-taskKey="com.javarush.task.task35.task3513.big17"\n\n2048 (17)
+The objective of the game is to slide numbered tiles on a grid to combine them to create a tile with the number 2048; however, one can continue to play the game after reaching the goal, creating tiles with larger numbers.
+2048 is played on a gray 4×4 grid, with numbered tiles that slide when a player moves them using the four arrow keys. Every turn, a new tile will randomly appear in an empty spot on the board with a value of either 2 or 4. Tiles slide as far as possible in the chosen direction until they are stopped by either another tile or the edge of the grid. If two tiles of the same number collide while moving, they will merge into a tile with the total value of the two tiles that collided. The resulting tile cannot merge with another tile again in the same move. Higher-scoring tiles emit a soft glow.
 
-Поздравляю с реализацией своей собственной версии игры 2048!
+If a move causes three consecutive tiles of the same value to slide together, only the two tiles farthest along the direction of motion will combine. If all four spaces in a row or column are filled with tiles of the same value, a move parallel to that row/column will combine the first two and last two. 
 
-Помимо основного функционала ты также реализовал отмену последнего хода и автоматический выбор наилучшего хода с помощью
-оценки эффективности одиночного хода.
-
-Из возможных улучшений можешь попробовать увеличить глубину анализа эффективности хода и проверить,
-сможет ли твой алгоритм набрать максимально возможный счет в 839,732 очков.
+A scoreboard on the upper-right keeps track of the user's score. The user's score starts at zero, and is increased whenever two tiles combine, by the value of the new tile. As with many arcade games, the user's best score is shown alongside the current score.
 
 
-Требования:
-1.	Поздравляю, ты отлично справился!
+A game of 2048 in progress
+The game is won when a tile with a value of 2048 appears on the board, hence the name of the game. After reaching the 2048 tile, players can continue to play (beyond the 2048 tile) to reach higher scores. When the player has no legal moves (there are no empty spaces and no adjacent tiles with the same value), the game ends.
 
-
-2048 (16)
-
-Осталось совсем немного! У нас есть способ вычислить эффективность любого хода, а также мы можем их сравнивать
-между собой.
-
-Давай реализуем метод autoMove в классе Model, который будет выбирать лучший из возможных ходов и выполнять его.
-
-Сделаем так:
-1) Создадим локальную PriorityQueue с параметром Collections.reverseOrder() (для того,
-чтобы вверху очереди всегда был максимальный элемент) и размером равным четырем.
-2) Заполним PriorityQueue четырьмя объектами типа MoveEfficiency (по одному на каждый вариант хода).
-3) Возьмем верхний элемент и выполним ход связанный с ним.
-
-После реализации метода autoMove добавим его вызов в метод keyPressed класса Controller
-по нажатию на клавишу A (код - KeyEvent.VK_A).
-
-P.S. В качестве факультативного задания можешь почитать про указатели на методы и попробовать передать
-аргумент в метод getMoveEfficiency используя оператор "::". Для метода left должно получиться
-getMoveEfficiency(this::left). Альтернативно можешь использовать внутренний анонимный класс.
-
-
-
-2048 (15)
-
-Для того, чтобы эффективности различных ходов можно было сравнивать, необходимо реализовать в классе
-MoveEfficiency поддержку интерфейса Comparable.
-
-В методе compareTo первым делом сравни количество пустых плиток (numberOfEmptyTiles), потом счет (score),
-если количество пустых плиток равное. Если и счет окажется равным, будем считать эффективность ходов
-равной и вернем ноль.
-
-Далее перейдем в класс Model и реализуем два метода:
-1) boolean hasBoardChanged - будет возвращать true, в случае, если вес плиток в массиве gameTiles
-отличается от веса плиток в верхнем массиве стека previousStates. Обрати внимание на то, что мы
-не должны удалять из стека верхний элемент, используй метод peek.
-2) MoveEfficiency getMoveEfficiency(Move move) - принимает один параметр типа move, и возвращает
-объект типа MoveEfficiency описывающий эффективность переданного хода. Несколько советов:
-а) не забудь вызывать метод rollback, чтобы восстановить корректное игровое состояние;
-б) в случае, если ход не меняет состояние игрового поля, количество пустых плиток и счет у объекта MoveEfficiency
-сделай равными -1 и 0 соответственно;
-в) выполнить ход можно вызвав метод move на объекте полученном в качестве параметра.
-
-
-
-2048 (14)
-
-Случайный ход конечно неплох, но намного круче реализовать возможность умного хода. В дебри нейронных сетей
-мы заходить не будем, для начала сконцентрируемся на достаточно простой идее.
-
-Очевидно, хороший ход должен в итоге приближать нас к победе, а именно к получению плитки 2048.
-Предлагаю рассмотреть такой вариант сравнения эффективности хода:
-1) Первый ход является лучше второго, если после его совершения на поле находится больше пустых плиток,
-чем в результате второго хода.
-2) Первый ход является лучше второго, если общий счет после его совершения больше, чем счет
-полученный в результате второго хода.
-
-Для того, чтобы реализовать такое сравнение, мы можем совершить ход, оценить его эффективность и потом
-отменить совершенный ход, чтобы вернуть игру в начальное состояние. Применив эту последовательность действий
-ко всем четырем вариантам хода, сможем выбрать наиболее эффективный ход и выполнить его.
-
-Концептуально, нам понадобятся два класса, один будет описывать ход, а другой эффективность хода.
-
-Создай интерфейс Move с одним void методом move. Отметь интерфейс аннотацией @FunctionalInterface, которая
-будет сигнализировать о том что в этом интерфейсе будет только один абстрактный метод.
-
-Создай класс MoveEfficiency, описывающий эффективность хода. В нем нам понадобятся приватные поля
-numberOfEmptyTiles и score типа int, а также приватное поле поле move типа Move.
-В классе MoveEfficiency необходим конструктор с тремя параметрами (int numberOfEmptyTiles, int score, Move move)
-для инициализации полей класса и геттер для поля move.
-
-
-
-2048 (13)
-
-Твой прогресс впечатляет! Для разнообразия, предлагаю дать игре возможность самостоятельно
-выбирать следующий ход.
-
-Начнем с простого, реализуем метод randomMove в классе Model, который будет вызывать один из методов движения
-случайным образом. Можешь реализовать это вычислив целочисленное n = ((int) (Math.random() * 100)) % 4.
-Это число будет содержать целое псевдослучайное число в диапазоне [0..3], по каждому из которых можешь вызывать
-один из методов left, right, up, down.
-
-Не забудь добавить в метод keyPressed класса Controller вызов метода randomMove по нажатию на клавишу R
-(код - KeyEvent.VK_R).
-
-P.S. Проверку корректности работы метода randomMove оставляю полностью под твою ответственность,
-проверю только наличие вызова метода Math.random().
-
-
-
-2048 (12)
-
-Ну что, попробуем наш алгоритм в действии? Осталось добавить сохранение игрового состояния в начало каждого
-метода движения, а также еще один кейс для обработки клавиши, которой будем выполнять отмену последнего хода.
-
-При сохранении текущего состояния в стек, обрати внимание на то, чтобы всегда сохранялось актуальное состояние
-и только однажды. Если ты послушал мой совет и реализовал методы right, up, down с помощью поворотов и вызова
-метода left, можешь использовать следующий подход:
-1) В самом начале методов right, up, down вызываем метод saveState с gameTiles в качестве параметра.
-2) В методе left организуем проверку того, вызывался ли уже метод saveState. За это у нас отвечает
-флаг isSaveNeeded, соответственно, если он равен true, выполняем сохранение. После выполнения
-сдвига влево устанавливаем флаг isSaveNeeded равным true.
-
-Также добавим в метод keyPressed класса Controller вызов метода rollback по нажатию на клавишу Z (код - KeyEvent.VK_Z).
-
-
-
+The simple gameplay mechanics (just four directions) allowed it to be used in a promo video for the Myo gesture control armband, and the availability of the code underneath allowed it to be used as a teaching aid for programming;[15] the second-place winner of a coding contest at Matlab Central Exchange was an AI system that would play 2048 on its own.
